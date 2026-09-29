@@ -35,21 +35,21 @@ Hệ thống kết hợp mô hình **Serverless & Microservices-ready**, tận d
 
 ```mermaid
 graph TD
-    Client["💻 React Web Application (Vite + Tailwind)"] -->|HTTPS / REST API| APIGateway["🌐 Amazon API Gateway / Express App"]
+    Client["React Web Application (Vite + Tailwind)"] -->|HTTPS / REST API| APIGateway["Amazon API Gateway / Express App"]
 
-    subgraph AWS Security & Auth
-        APIGateway -->|Xác thực Token & Đăng nhập| Cognito["🔐 Amazon Cognito User Pool<br/>(ap-southeast-1_UKuhhnlCk)"]
+    subgraph AWS_Security_Auth ["AWS Security & Auth"]
+        APIGateway -->|Xác thực Token & Đăng nhập| Cognito["Amazon Cognito User Pool"]
     end
 
-    subgraph AWS Storage & DB
-        APIGateway -->|CRUD Sự kiện| RDS[("🗄️ Amazon RDS MySQL<br/>events table")]
-        APIGateway -->|TransactWrite RSVP & Query| DynamoDB[("⚡ Amazon DynamoDB<br/>ServerlessRsvpPlatform-prod-RSVPTable")]
-        APIGateway -->|Upload Banner & Avatar (<=2MB)| S3["📦 Amazon S3 Bucket<br/>(tuantm-assets-bucket)"]
+    subgraph AWS_Storage_DB ["AWS Storage & DB"]
+        APIGateway -->|CRUD Sự kiện| RDS[("Amazon RDS MySQL (events)")]
+        APIGateway -->|TransactWrite RSVP & Query| DynamoDB[("Amazon DynamoDB (RSVPTable)")]
+        APIGateway -->|Upload Banner & Avatar - Tối đa 2MB| S3["Amazon S3 (tuantm-assets-bucket)"]
     end
 
-    subgraph AWS Notifications
-        APIGateway -->|Gửi Email Template Xác nhận| SES["✉️ Amazon Simple Email Service (SES)<br/>(devblue404@gmail.com)"]
-        SES -->|Gửi thư tới Inbox| Attendees["📧 Người tham dự (Attendees)"]
+    subgraph AWS_Notifications ["AWS Notifications"]
+        APIGateway -->|Gửi Email Template Xác nhận| SES["Amazon Simple Email Service (SES)"]
+        SES -->|Gửi thư tới Inbox| Attendees["Người tham dự (Attendees)"]
     end
 ```
 
@@ -150,8 +150,7 @@ sequenceDiagram
         RSVPCtrl->>S3: PutObjectCommand (tuantm-assets-bucket)
         S3-->>RSVPCtrl: Trả về S3 URL công khai
     end
-    RSVPCtrl->>Dynamo: TransactWriteItemsCommand
-    Note over Dynamo: 1. Put Item: PK=EVENT#id, SK=USER#email<br/>2. Update Item: ADD yes_count / no_count
+    RSVPCtrl->>Dynamo: TransactWriteItemsCommand (Put Item & Update Counter)
     RSVPCtrl->>SES: sendRsvpConfirmationEmail (Bất đồng bộ)
     SES-->>User: Gửi email xác nhận HTML đẹp
     RSVPCtrl-->>App: Trả về kết quả 200 OK
@@ -199,16 +198,24 @@ CREATE TABLE IF NOT EXISTS events (
 
 ---
 
-## 6. Bảng biến môi trường (.env Reference)
+## 6. Bảng biến môi trường mẫu (.env Reference)
 
-| Tên biến | Ví dụ giá trị | Mục đích |
+Bảng dưới đây là cấu hình các biến môi trường mẫu để thiết lập dự án:
+
+| Tên biến | Giá trị mẫu (Ví dụ) | Mục đích |
 |---|---|---|
 | `PORT` | `3000` | Cổng chạy Express Server Local |
-| `REGION` | `ap-southeast-1` | Vùng AWS triển khai dịch vụ |
-| `S3_BUCKET_NAME` | `tuantm-assets-bucket` | Tên S3 Bucket lưu trữ ảnh |
-| `SES_SENDER_EMAIL` | `devblue404@gmail.com` | Email người gửi đã xác thực trên SES |
-| `COGNITO_USER_POOL_ID`| `ap-southeast-1_UKuhhnlCk` | User Pool ID xác thực danh tính |
-| `COGNITO_CLIENT_ID` | `2g6fhbqqkt805nl5g0aicmgp0n` | App Client ID trong User Pool |
-| `TABLE_NAME` | `ServerlessRsvpPlatform-prod-RSVPTable` | Bảng DynamoDB lưu trữ RSVP |
-| `DB_HOST` | `127.0.0.1` | Địa chỉ Host MySQL RDS |
-| `DB_NAME` | `events_db` | Tên cơ sở dữ liệu MySQL |
+| `REGION` | `ap-southeast-1` | AWS Region triển khai (VD: `ap-southeast-1`, `us-east-1`) |
+| `S3_BUCKET_NAME` | `my-aws-event-assets-bucket` | AWS S3 Bucket lưu trữ ảnh sự kiện & avatar (<= 2MB) |
+| `AWS_ACCESS_KEY_ID` | `AKIAIOSFODNN7EXAMPLE` | Access Key IAM User xác thực quyền AWS |
+| `AWS_SECRET_ACCESS_KEY` | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` | Secret Access Key IAM User |
+| `AWS_SESSION_TOKEN` | *(Để trống nếu dùng permanent IAM key)* | Session token khi dùng tạm thời qua AWS STS |
+| `SES_SENDER_EMAIL` | `noreply-events@yourdomain.com` | Email người gửi đã được Verified Identity trên Amazon SES |
+| `COGNITO_USER_POOL_ID` | `ap-southeast-1_xxxxxxxxx` | User Pool ID dịch vụ xác thực Amazon Cognito |
+| `COGNITO_CLIENT_ID` | `xxxxxxxxxxxxxxxxxxxxxxxxxx` | App Client ID xác thực người dùng trong Cognito |
+| `TABLE_NAME` | `ServerlessRsvpPlatform-prod-RSVPTable` | Bảng Amazon DynamoDB lưu trữ danh sách RSVP & đếm số lượng |
+| `DB_HOST` | `your-rds-instance.xxxxxx.ap-southeast-1.rds.amazonaws.com` | Endpoint máy chủ Amazon RDS MySQL Multi-AZ |
+| `DB_USER` | `admin` | Tài khoản quản trị cơ sở dữ liệu MySQL |
+| `DB_PASS` | `YourSecurePassword123!` | Mật khẩu truy cập cơ sở dữ liệu MySQL |
+| `DB_NAME` | `eventsdb` | Tên cơ sở dữ liệu MySQL lưu trữ thông tin sự kiện |
+
