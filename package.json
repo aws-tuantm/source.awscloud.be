@@ -2,8 +2,19 @@
   "name": "source.awscloud.be",
   "type": "module",
   "version": "1.0.0",
+  "scripts": {
+    "dev": "node --watch local.js",
+    "start": "node local.js"
+  },
   "dependencies": {
-    "mysql2": "^3.11.0",
-    "@aws-sdk/client-dynamodb": "^3.679.0"
+    "@aws-sdk/client-cognito-identity-provider": "^3.1142.0",
+    "@aws-sdk/client-dynamodb": "^3.679.0",
+    "@aws-sdk/client-s3": "^3.1142.0",
+    "@aws-sdk/client-ses": "^3.1142.0",
+    "@aws-sdk/s3-request-presigner": "^3.1142.0",
+    "dotenv": "^18.0.4",
+    "express": "^5.2.1",
+    "multer": "^2.4.0",
+    "mysql2": "^3.11.0"
   }
 }
