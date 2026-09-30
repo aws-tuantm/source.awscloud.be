@@ -202,10 +202,19 @@ export const handler = async (event) => {
 
   // Extract useful parts of the API Gateway event
   const method = event.requestContext?.http?.method || event.httpMethod || 'GET';
-  const path = event.requestContext?.http?.path || event.path || '/';
-  const pathParams = event.pathParameters || {};
-  const queryParams = event.queryStringParameters || {};
-  const body = event.body ? (typeof event.body === 'string' ? JSON.parse(event.body) : event.body) : {};
+  let body = {};
+  if (event.body) {
+    if (typeof event.body === 'string') {
+      try {
+        body = JSON.parse(event.body);
+      } catch {
+        // Body is not JSON (e.g. raw text / form-data)
+        body = event.body;
+      }
+    } else {
+      body = event.body;
+    }
+  }
 
   // Handle CORS preflight request for browsers
   if (method === 'OPTIONS') {
