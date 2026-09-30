@@ -5,6 +5,7 @@ import eventRoutes from './routes/eventRoutes.js';
 import rsvpRoutes from './routes/rsvpRoutes.js';
 import emailRoutes from './routes/emailRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import { swaggerDocument } from './config/swaggerDoc.js';
 
 export const createApp = () => {
   const app = express();
@@ -30,7 +31,7 @@ export const createApp = () => {
 
   // Swagger API Documentation Endpoints
   app.get('/swagger.json', (req, res) => {
-    res.sendFile(path.resolve(process.cwd(), 'swagger.json'));
+    res.json(swaggerDocument);
   });
 
   app.get('/docs', (req, res) => {
@@ -54,7 +55,7 @@ export const createApp = () => {
   <script>
     window.onload = () => {
       window.ui = SwaggerUIBundle({
-        url: '/swagger.json',
+        spec: ${JSON.stringify(swaggerDocument)},
         dom_id: '#swagger-ui',
         deepLinking: true,
         presets: [

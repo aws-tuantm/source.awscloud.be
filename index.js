@@ -1,5 +1,6 @@
 import fs from 'fs';
 import pathModule from 'path';
+import { swaggerDocument } from './src/config/swaggerDoc.js';
 // Import MySQL (with async/await support) and AWS SDK clients
 import mysql from 'mysql2/promise';
 import {
@@ -260,16 +261,7 @@ export const handler = async (event) => {
     }
 
     if (method === "GET" && path === "/swagger.json") {
-      try {
-        const swaggerPath = pathModule.resolve(process.cwd(), 'swagger.json');
-        if (fs.existsSync(swaggerPath)) {
-          const doc = JSON.parse(fs.readFileSync(swaggerPath, 'utf8'));
-          return json(doc);
-        }
-      } catch (e) {
-        console.warn('Could not read swagger.json:', e.message);
-      }
-      return json({ message: "Swagger specification file not found." }, 404);
+      return json(swaggerDocument);
     }
 
     if (method === "GET" && path === "/docs") {
@@ -292,7 +284,7 @@ export const handler = async (event) => {
   <script>
     window.onload = () => {
       window.ui = SwaggerUIBundle({
-        url: './swagger.json',
+        spec: ${JSON.stringify(swaggerDocument)},
         dom_id: '#swagger-ui',
         deepLinking: true,
         presets: [
