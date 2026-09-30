@@ -1,3 +1,5 @@
+import fs from 'fs';
+import pathModule from 'path';
 // Import MySQL (with async/await support) and AWS SDK clients
 import mysql from 'mysql2/promise';
 import {
@@ -248,6 +250,72 @@ export const handler = async (event) => {
   };
 
   try {
+    /*
+      =======================================================
+      0. SYSTEM & SWAGGER DOCUMENTATION ROUTES
+      =======================================================
+    */
+    if (method === "GET" && (path === "/health" || path === "/")) {
+      return json({ status: "ok", timestamp: new Date().toISOString() });
+    }
+
+    if (method === "GET" && path === "/swagger.json") {
+      try {
+        const swaggerPath = pathModule.resolve(process.cwd(), 'swagger.json');
+        if (fs.existsSync(swaggerPath)) {
+          const doc = JSON.parse(fs.readFileSync(swaggerPath, 'utf8'));
+          return json(doc);
+        }
+      } catch (e) {
+        console.warn('Could not read swagger.json:', e.message);
+      }
+      return json({ message: "Swagger specification file not found." }, 404);
+    }
+
+    if (method === "GET" && path === "/docs") {
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AWS Cloud Event API - Swagger Documentation</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+  <style>
+    body { margin: 0; padding: 0; background: #fafafa; }
+    .topbar { display: none; }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = () => {
+      window.ui = SwaggerUIBundle({
+        url: './swagger.json',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: "BaseLayout"
+      });
+    };
+  </script>
+</body>
+</html>`;
+
+      return {
+        statusCode: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: html,
+      };
+    }
+
     /*
       =======================================================
       VALIDATION HELPERS
