@@ -202,6 +202,9 @@ export const handler = async (event) => {
 
   // Extract useful parts of the API Gateway event
   const method = event.requestContext?.http?.method || event.httpMethod || 'GET';
+  const path = event.requestContext?.http?.path || event.rawPath || event.path || '/';
+  const pathParams = event.pathParameters || {};
+  const queryParams = event.queryStringParameters || {};
   let body = {};
   if (event.body) {
     if (typeof event.body === 'string') {
